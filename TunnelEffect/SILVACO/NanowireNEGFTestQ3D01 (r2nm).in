@@ -1,0 +1,178 @@
+go atlas simflags="-P 1"
+
+set Filename=NanowireNEGFTestQ3D01_r2nm_twosubband
+
+mesh  cylindrical
+
+x.m l=0.000    s=0.00025
+x.m l=0.0025    s=0.00025
+x.m l=0.003    s=0.00025
+
+y.m l=0.000     s=0.0002
+y.m l=0.025     s=0.0002
+
+region  num=1   x.min=0.00   x.max=0.0025  y.min=0.000  y.max=0.025 silicon 
+region  num=2   x.min=0.0025  x.max=0.003 y.min=0.010  y.max=0.015 sio2
+region  num=3  MATERIAL=air x.min=0.0025  x.max=0.003 y.min=0.000  y.max=0.010 
+region  num=4  MATERIAL=air x.min=0.0025  x.max=0.003 y.min=0.015 y.max=0.025
+
+electrode   num=1 name= source x.max=0.0025   y.max=0.000 
+electrode   num=2 name= drain  x.max=0.0025   y.min=0.025
+electrode   num=3 name= gate   x.min=0.003   y.min=0.01 y.max=0.015
+
+contact name=source  reflect
+contact name=drain   reflect
+contact name=gate    workfun=4.5
+###########################################################################
+# Here if change workfunction above 4.85eV , the conduction band structure
+# will converge and have a good result for Vg=0.8V
+# because it changed threshold voltage of whole model
+###########################################################################
+
+doping region=1 y.min=0.00   y.max=0.010   n.type uniform conc=1.0E20
+doping region=1 y.min=0.015 y.max=0.025  n.type uniform conc=1.0E20
+#doping region=1 y.min=0.01 y.max=0.04  p.type uniform conc=1.0E18
+
+#save outfile=$"Filename"_Str.str
+
+models fixed.fermi schro sp.geom=1dx negf_ms npred.negf=1E4 qcrit.negf=1E-4 esize.negf=1E4 quantum ^dd_ms ^ox.schro ^ox.poisson sp.smooth num.dir=3 eigen=1 print
+
+#############################################################################
+#  if there is no schrodinger and poisson equation calculated in oxide the   
+#   workfunction be reduce to 4.5eV where calculation can converge
+#
+#
+#############################################################################
+method carr=0 
+#^maxtrap=100 ^itlimit=1000  
+output band.par con.band val.band eigens=1 esizeout.negf=500
+##############################transmission######################################
+probe transmission filename="transE"
+probe dosvse y=0.012
+probe curdvse y=0.012
+solve prev
+save outf=transE_init.str negf.log
+tonyplot transE_init.str 
+tonyplot transE0.log 
+#############################bandstructure######################################
+solve init
+save outf=$"Filename"_Init.str negf.log
+
+#solve 
+#save outf=$"Filename"_Vd00Vg00.str 
+solve v2=0.8 v3=0.0
+save outf=$"Filename"_Vd08Vg00.str
+#tonyplot $"Filename"_Vd08Vg00.str
+#solve v2=0.8 v3=0.01
+#solve v2=0.8 v3=0.02
+#solve v2=0.8 v3=0.03
+#solve v2=0.8 v3=0.04
+#solve v2=0.8 v3=0.05
+#solve v2=0.8 v3=0.06
+#solve v2=0.8 v3=0.07
+#solve v2=0.8 v3=0.08
+#solve v2=0.8 v3=0.09
+#solve v2=0.8 v3=0.092
+#solve v2=0.8 v3=0.095
+#solve v2=0.8 v3=0.096
+#solve v2=0.8 v3=0.097
+#solve v2=0.8 v3=0.098
+#solve v2=0.8 v3=0.099
+#solve v2=0.8 v3=0.0995
+solve v2=0.6 v3=0.1
+save outf=$"Filename"_Vd08Vg01.str
+solve v2=0.0 v3=0.0 qfactor=0.00001
+save outf=$"Filename"_Vd00Vg00.str
+#tonyplot $"Filename"_Vd08Vg01.str
+#solve v2=0.8 v3=0.36
+#save outf=$"Filename"_Vd08Vg036.str
+#solve v2=0.8 v3=0.12
+#solve v2=0.8 v3=0.15
+#solve v2=0.8 v3=0.18
+solve v2=0.6 v3=0.2
+save outf=$"Filename"_Vd08Vg02.str
+#tonyplot $"Filename"_Vd08Vg02.str
+solve v2=0.6 v3=0.3
+save outf=$"Filename"_Vd08Vg03.str
+#tonyplot $"Filename"_Vd08Vg03.str
+solve v2=0.6 v3=0.4 qfactor=0.001
+save outf=$"Filename"_Vd08Vg04.str negf.log
+tonyplot $"Filename"_Vd08Vg04.str 
+tonyplot transE.log 
+solve v2=0.6 v3=0.5
+save outf=$"Filename"_Vd08Vg05.str 
+#tonyplot $"Filename"_Vd08Vg05.str
+solve v2=0.6 v3=0.6
+save outf=$"Filename"_Vd08Vg06.str
+#tonyplot $"Filename"_Vd08Vg06.str
+solve v2=0.6 v3=0.7 qfactor=0.001
+save outf=$"Filename"_Vd08Vg07.str
+#tonyplot $"Filename"_Vd08Vg08.str
+solve v2=0.6 v3=0.8 qfactor=0.0001
+save outf=$"Filename"_Vd08Vg08.str
+solve v2=1.0 v3=0
+save outf=$"Filename"_Vd10Vg00.str
+
+#solve v2=0.8 v3=0.2
+#save outf=$"Filename"_Vd08Vg02.str
+
+#solve v2=00.8 v3=0.4
+#save outf=$"Filename"_Vd08Vg04.str
+
+#solve v2=0.8 v3=0.5
+#save outf=$"Filename"_Vd08Vg05.str
+
+#solve v2=0.8 v3=0.8 qfactor=0.0001
+#save outf=$"Filename"_Vd08Vg08.str
+
+log outf=IdVg_$"Filename".log
+solve v2=0.6 v3=0 vstep=0.05 vfinal=1.0 name=gate
+log off
+
+log outf=IdVd_$"Filename"050.log
+solve v3=0.5 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+log off
+log outf=IdVd_$"Filename"055.log
+solve v3=0.55 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+log off
+log outf=IdVd_$"Filename"060.log
+solve v3=0.6 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+log off
+#log outf=IdVd_$"Filename"065.log
+#solve v3=0.65 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+#log off
+#log outf=IdVd_$"Filename"070.log
+#solve v3=0.7 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+#log off
+#log outf=IdVd_$"Filename"075.log
+#solve v3=0.75 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+#log outf=IdVd_$"Filename"080.log
+#solve v3=0.8 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+#log off
+#log outf=IdVd_$"Filename"100.log
+#solve v3=1.0 v2=1.0 vstep=-0.05 vfinal=-0.10 name=drain
+#log off
+tonyplot -overlay $"Filename"_Vd00Vg00.str $"Filename"_Vd08Vg00.str $"Filename"_Vd08Vg01.str $"Filename"_Vd08Vg02.str $"Filename"_Vd08Vg03.str $"Filename"_Vd08Vg04.str $"Filename"_Vd08Vg05.str $"Filename"_Vd08Vg06.str $"Filename"_Vd08Vg07.str $"Filename"_Vd08Vg08.str $"Filename"_Vd10Vg00.str ^$"Filename"_Vd08Vg035.str ^$"Filename"_Vd08Vg034.str
+
+#solve v2=0.8 v3=0.4
+#save outf=$"Filename"_Vd08Vg04.str
+#solve v2=0.8 v3=0.5
+#save outf=$"Filename"_Vd08Vg05_1.str
+#tonyplot $"Filename"_Vd08Vg05_1.str
+
+#solve v2=0.8 v3=1.0
+#save outf=$"Filename"_Vd08Vg10.str
+#tonyplot $"Filename"_Vd08Vg10.str
+
+#solve v3=0.0 vstep=0.01 vfinal=1.0 name=gate 
+#log off
+
+#save outf=$"Filename"_Vd08Vg01.str
+tonyplot IdVg_$"Filename".log 
+tonyplot -overlay IdVd_$"Filename"050.log IdVd_$"Filename"055.log IdVd_$"Filename"060.log 
+#IdVd_$"Filename"065.log IdVd_$"Filename"070.log IdVd_$"Filename"075.log IdVd_$"Filename"080.log ^IdVd_$"Filename"100.log
+#tonyplot $"Fliename"_Vd08Vg00.str -set $"Filename"_Vd08Vg00.set
+#tonyplot -overlay $"Filename"_Vd08Vg01.str $"Filename"_Vd08Vg02.str $"Filename"_Vd08Vg03.str $"Filename"_Vd08Vg04.str $"Filename"_Vd08Vg05.str $"Filename"_Vd08Vg06.str $"Filename"_Vd08Vg08.str $"Filename"_Vd08VgM03.str $"Filename"_Vd08VgM02.str $"Filename"_vd08VgM01.str -set $"Filename"_band.set
+
+quit
+
