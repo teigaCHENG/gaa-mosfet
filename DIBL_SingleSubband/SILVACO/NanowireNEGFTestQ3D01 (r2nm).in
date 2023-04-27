@@ -1,0 +1,83 @@
+﻿go atlas simflags="-P 1"
+
+set Filename=NanowireNEGFTestQ3D01_r2nm_twosubband
+#####################################mesh#######################################mesh  cylindrical
+
+x.m l=0.000    s=0.00025
+x.m l=0.002    s=0.00025
+x.m l=0.0025    s=0.00025
+
+y.m l=0.000     s=0.0002
+y.m l=0.04     s=0.0002
+##################################structure#####################################
+region  num=1   x.min=0.00   x.max=0.002  y.min=0.000  y.max=0.04 silicon 
+region  num=2   x.min=0.002  x.max=0.0025 y.min=0.010  y.max=0.03 sio2
+region  num=3  MATERIAL=air x.min=0.002  x.max=0.0025 y.min=0.000  y.max=0.010 
+region  num=4  MATERIAL=air x.min=0.002  x.max=0.0025 y.min=0.03 y.max=0.04
+
+electrode   num=1 name= source x.max=0.002   y.max=0.000 
+electrode   num=2 name= drain  x.max=0.002   y.min=0.04
+electrode   num=3 name= gate   x.min=0.0025   y.min=0.01 y.max=0.03
+
+contact name=source  reflect
+contact name=drain   reflect
+contact name=gate    workfun=4.5
+
+doping region=1 y.min=0.00   y.max=0.010   n.type uniform conc=1.0E20
+doping region=1 y.min=0.03 y.max=0.04  n.type uniform conc=1.0E20
+
+
+models fixed.fermi schro sp.geom=1dx negf_ms npred.negf=1E4 qcrit.negf=1E-4 esize.negf=1E4 quantum ^dd_ms ^ox.schro ^ox.poisson sp.smooth num.dir=3 eigen=1 print
+
+method carr=0 maxtrap=100 ^itlimit=1000  
+output band.par con.band val.band eigens=1 esizeout.negf=500
+#############################bandstructure######################################
+solve init
+save outf=$"Filename"_Init.str negf.log
+
+solve v2=0.8 v3=0.0
+save outf=$"Filename"_Vd08Vg00.str
+solve v2=0.6 v3=0.1
+save outf=$"Filename"_Vd08Vg01.str
+solve v2=0.0 v3=0.0 qfactor=0.00001
+save outf=$"Filename"_Vd00Vg00.str
+solve v2=0.6 v3=0.2
+save outf=$"Filename"_Vd08Vg02.str
+solve v2=0.6 v3=0.3
+save outf=$"Filename"_Vd08Vg03.str
+solve v2=0.6 v3=0.4 qfactor=0.001
+save outf=$"Filename"_Vd08Vg04.str negf.log
+tonyplot $"Filename"_Vd08Vg04.str 
+tonyplot transE.log 
+solve v2=0.6 v3=0.5
+save outf=$"Filename"_Vd08Vg05.str 
+solve v2=0.6 v3=0.6
+save outf=$"Filename"_Vd08Vg06.str
+solve v2=0.6 v3=0.7 qfactor=0.001
+save outf=$"Filename"_Vd08Vg07.str
+solve v2=0.6 v3=0.8 qfactor=0.0001
+save outf=$"Filename"_Vd08Vg08.str
+solve v2=1.0 v3=0
+save outf=$"Filename"_Vd10Vg00.str
+
+log outf=IdVg_$"Filename".log
+solve v2=0.6 v3=0 vstep=0.05 vfinal=1.0 name=gate
+log off
+
+log outf=IdVd_$"Filename"050.log
+solve v3=0.5 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+log off
+log outf=IdVd_$"Filename"055.log
+solve v3=0.55 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+log off
+log outf=IdVd_$"Filename"060.log
+solve v3=0.6 v2=-0.1 vstep=0.05 vfinal=1.0 name=drain
+log off
+tonyplot -overlay $"Filename"_Vd00Vg00.str $"Filename"_Vd08Vg00.str $"Filename"_Vd08Vg01.str $"Filename"_Vd08Vg02.str $"Filename"_Vd08Vg03.str $"Filename"_Vd08Vg04.str $"Filename"_Vd08Vg05.str $"Filename"_Vd08Vg06.str $"Filename"_Vd08Vg07.str $"Filename"_Vd08Vg08.str $"Filename"_Vd10Vg00.str ^$"Filename"_Vd08Vg035.str ^$"Filename"_Vd08Vg034.str
+
+
+tonyplot IdVg_$"Filename".log 
+tonyplot -overlay IdVd_$"Filename"050.log IdVd_$"Filename"055.log IdVd_$"Filename"060.log 
+quit
+
+
