@@ -1,0 +1,128 @@
+`include "disciplines.vams"
+
+
+module gaamosfet(d,g,s);
+
+inout d,g,s;
+
+electrical d,g,s;
+
+parameter real pi=3.14;//constant Pi
+
+parameter real cc=2e-6;//current constant given by (e kB T)/(Pi hbar
+//
+parameter real vc=11;
+//
+parameter real ec=1.5;
+
+parameter real vt=25.9e-3;//thermal voltage at 300K
+
+parameter real t=300;//temperature
+
+parameter real nxy=4; //number of valley degeneracy at x-y plane
+
+parameter real nz=2;//number of valley degeneracy along z axie
+
+parameter real mc=0.19;//conduction mass 
+
+parameter real mr=0.314;//confinment mass in x-y plane
+
+parameter real bz=2.4;//bessel zero for nfi=0,nr=1
+
+parameter real epsox=3.9;//relative permitivity of oxide
+
+parameter real tox=0.5; //effective oxide thickness
+
+parameter real r=2; //wire radius
+
+parameter real vfb=0; //flatband voltag
+e
+parameter real wgc=0;//workfunction difference between gate and channel
+
+parameter real consa=8.45; //(8 Pi^4 hbar^2 \[Epsilon]si^2)/(subbandtable[[1, 1]]^2 e^3 mt)
+
+parameter real conscox=0.94; //(4 Pi \[Epsilon]si)/Cox[R, Tox]
+
+parameter real consb=1.72; //subbandtable[[1, 5]] + (4 Pi \[Epsilon]si)/Cox[R, Tox]
+
+parameter real consc=-0.078; //- subbandtable[[1, 3]]
+//
+parameter real consd1=34.8;
+
+parameter real h00=0.78; //perturbation term
+
+parameter real h11=0.78; //perturbation term
+
+parameter real c40=1.74; //mass term
+
+parameter real c41=1.91; //mass term
+
+
+real cox,energy01,energy02;// const01,const02,
+
+real vgs,vds,deltau1,deltau2,unideltau,ws,Id;
+
+real c30,c31,c1,c2,b7,b4,b3,b2,b1,dd1,dd2;
+ 
+
+analog begin
+
+
+//cox=(2*pi*epsox*8.854e-12)/ln(1+tox/r);
+
+
+vgs=V(g,s);
+
+vds=V(d,s);
+
+
+deltau1=consb/(2*consa)*(-1+sqrt(1+(4*consa)/(pow(consb,2))*(1/25)*ln(1+exp(25*(vgs-wgc+vfb+consc)))));
+
+
+//deltau2=vt*(1/2)*(-consd1+sqrt(pow(consd1,2)-4*(2.269*(1.1555-1.328*(3.664*(-4.984+38.681*(vgs-wgc+vfb)+3.04*(-3.01+38.681*(vgs-wgc+vfb))))))));
+
+c30=(vgs-wgc+vfb)/vt-3.01;
+
+c31=(vgs-wgc+vfb)/vt-4.98;
+
+c1=0.81;
+
+c2=conscox;
+
+b7=(c2+h00)*(c2+h11);
+
+b3=c30*pow(c40,2)+c31*pow(41,2);
+
+b4=2*c40*c41;
+
+b2=(c2+h00)*pow(c40,2)+(c2+h11)*pow(c41,2);
+
+b1=pow(c1,2);
+
+dd2=(pow(b2,2)-2*b1*b3-pow(b4,2)*b7)/pow(b1,2);
+
+dd1=2*b2/b1;
+
+deltau2=vt*(1/2)*(-dd1+sqrt(pow(dd1,2)-4*dd2));
+ 
+
+unideltau=(1/(1+exp(0.3*((vgs-wgc+vfb)/vt-0.129/vt-5))))*deltau1+(1/(1+exp(-0.3*((vgs-wgc+vfb)/vt-0.129/vt-5))))*deltau2;
+
+
+energy01=3.01+(30.25*unideltau);
+
+
+energy02=4.98+(30.25*unideltau);
+
+
+Id=cc*(nxy*ln(1+exp(1/vt*(vgs-wgc+wfb-conscox*unideltau)-energy01))-nxy*ln(1+exp(1/vt*(vgs-wgc+wfb-conscox*unideltau)-energy01-vds/vt))+nz*ln(1+exp(1/vt*(vgs-wgc+wfb-conscox*unideltau)-energy02))-nz*ln(1+exp(1/vt*(vgs-wgc+wfb-conscox*unideltau)-energy02-vds/vt))); 
+
+
+I(d,s)<+Id;
+
+
+end
+
+
+endmodule
+
