@@ -1,0 +1,106 @@
+//analytic compact model of Ballistic cylindrical Gate-All-Around MOSFET incorporating DIBL effect
+//using Landauer formula to calculate ballistic current
+//only the lowest subband is taken into account
+
+`include "disciplines.vams"//collection of ralated physical signal types
+`include "constants.vams"  //useful mathematical and physical constants defined
+
+module gaamosfet(d,g,s);   //descriptions of individual components, block of statements
+
+inout d,g,s;               //direction of the ports
+
+electrical d,g,s;          //type of the ports, signals associated with the ports are expected to be voltage and current
+
+//definitions of each parameter used in compact model
+//some of the mathemateical and physical constants had been defined
+//here to list them out
+//mathematical constants are pi and e
+//physical constants are unit charge[e], Boltzmann constant[kB], Planck constant[h], permittivity in vaccum[ipusilon zero] 
+//physical parameters
+//
+parameter real m0=9.1100e-31; //net electron mass
+
+parameter real perch=11.90;    //channel relative permittivity
+
+parameter real perox=3.90;     //oxide relative permittivity
+
+parameter real mc=0.19;        //mass along channel direction  
+
+parameter real mr=0.314;       //mass along radius direction
+
+parameter real wgc=0.33;       //workfunction difference between gate and channel
+
+parameter real vbi=0.21;       //built-in voltage in source-channel boundary
+
+parameter real t=300;          //temperature
+//
+//device parameters
+//
+parameter real tox=0.5;        //effective oxide thickness
+
+parameter real r=2;            //wire radius
+
+parameter real L=9;            //channel length
+//
+//subband parameters
+//
+parameter real nxy=4;          //number of valley degeneracy in radius direction
+
+parameter real bz=2.4;         //the 1st zero point for 0th order of the first kind of bessel function
+
+parameter real h00=0.7820;     //perturbation term
+
+parameter real consa=8.45; //(8 Pi^4 hbar^2 \[Epsilon]si^2)/(subbandtable[[1, 1]]^2 e^3 mt)
+parameter real conscox=0.94; //(4 Pi \[Epsilon]si)/Cox[R, Tox]
+parameter real consb=1.72; //subbandtable[[1, 5]] + (4 Pi \[Epsilon]si)/Cox[R, Tox]
+parameter real consc=-0.078; //- subbandtable[[1, 3]]
+
+real cox,a,b,d,deltaug_0,deltaug_L,alpha,gamma,zmax;
+real vgs,vds,deltaug,deltaugz,unideltaug,ws,Id;
+real energy01;
+
+analog begin
+
+vgs=V(g,s);
+vds=V(d,s);
+
+//capacitance of cylinder per unit length
+cox=2*`M_PI*perox/ln(1+tox/r);
+
+//parameters to calculate deltaug
+a=pow(`M_PI,4)*pow(`P_H/(2*`M_PI),2)*pow(perch,2)/(2*pow(`P_Q,3)*mc*m0);
+
+b=h00+4*`M_PI*perch/cox;
+
+c=wgc+pow(`P_H/(2*`M_PI),2)*pow(bz,2)/(e*2*mr*pow(r,2));
+
+deltaug=b/(2*a)*(-1+sqrt(1+(4*a)/(pow(b,2))*(1/25)*ln(1+exp(25*(vgs-c)))));
+
+//parameters to calculate deltaugz
+alpha=(4*`M_PI*perch/cox+1)*pow(r,2);
+
+gamma=sqrt(4/alpha);
+
+deltaug_0=(-vbi+vgs-wgc)*pow(r,2)/alpha;
+
+deltaug_L=(-vbi+vgs-wgc-vds)*pow(r,2)/alpha;
+
+zmax=ln((deltaug_0*exp(gamma*L)+deltaug_L)/(deltaug_L*exp(-gamma*L)+deltaug_L))/(2*gamma);
+
+deltaugz=deltaug_0*(exp(gamma*(L-zmax))-exp(-(gamma*(L-zmax))))/(exp(gamma*L)-exp(-gamma*L))+deltaug_L*(exp(gamma*zmax)-exp(-gamma*zmax))/(exp(gamma*L)-exp(-gamma*L));
+
+//using smoothing function to connect expressions of deltaug in subthreshold and strong inversion region  
+unideltaug=deltaug+(1/(1+exp(-0.6*((vgs-(wgc+pow(`P_H/(2*`M_PI),2)*pow(bz,2)/(e*2*mr*pow(r,2)))+3))))*deltaugz;
+
+//the lowest subband calculated using perturbation theory
+energy01=pow(`P_H/(2*`M_PI),2)/(2*mr)*pow((bz/r),2)+`P_Q*h00*unideltaug;
+
+//Landauer formula to calculate ballistic current
+Id=`P_Q*kB*t/(`M_PI*`P_H)*(nxy*ln(1+exp(1/vt*(vgs-wgc-4*`M_PI*perch/cox*unideltaug)-energy01))-nxy*ln(1+exp(1/vt*(vgs-wgc-4*`M_PI*perch/cox*unideltaug)-energy01-vds/vt))); 
+
+I(d,s)<+Id;
+
+end
+
+endmodule
+
